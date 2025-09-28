@@ -1,3 +1,6 @@
+import { PaginationQuery } from "../base/api.js";
+import { ActivityAction } from "../enums/activity.js";
+
 export interface ActivityLogQuery extends PaginationQuery {
   user_id?: number;
   action?: ActivityAction;

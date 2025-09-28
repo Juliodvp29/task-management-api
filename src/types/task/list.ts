@@ -1,3 +1,7 @@
+import { User } from "../auth/user.js";
+import { BaseEntity } from "../base/entity.js";
+import { Task } from "./task.js";
+
 export interface TaskList extends BaseEntity {
   name: string;
   description?: string;

@@ -1,3 +1,5 @@
+import { Task } from "../task/task.js";
+
 export interface TaskUpdateMessage {
   task_id: number;
   action: 'created' | 'updated' | 'deleted' | 'moved' | 'completed';

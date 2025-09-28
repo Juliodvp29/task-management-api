@@ -1,3 +1,5 @@
+import { TaskPriority, TaskStatus } from "../enums/task.js";
+
 export const TASK_PRIORITIES = [
   { value: TaskPriority.LOW, label: 'Baja', color: '#10B981', icon: '🟢' },
   { value: TaskPriority.MEDIUM, label: 'Media', color: '#3B82F6', icon: '🟡' },

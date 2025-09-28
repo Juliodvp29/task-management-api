@@ -1,3 +1,10 @@
+import { User } from "../auth/user.js";
+import { BaseEntity } from "../base/entity.js";
+import { TaskPriority, TaskStatus } from "../enums/task.js";
+import { Attachment } from "../system/attachment.js";
+import { TaskComment } from "./comment.js";
+import { TaskList } from "./list.js";
+
 export interface Task extends BaseEntity {
   title: string;
   description?: string;

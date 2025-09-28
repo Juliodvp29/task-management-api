@@ -1,3 +1,7 @@
+import { User } from "../auth/user.js";
+import { BaseEntity } from "../base/entity.js";
+import { ActivityAction } from "../enums/activity.js";
+
 export interface ActivityLog extends BaseEntity {
   user_id?: number;
   action: ActivityAction;

@@ -1,3 +1,6 @@
+import { PaginationQuery } from "../base/api.js";
+import { TaskPriority, TaskStatus } from "../enums/task.js";
+
 export interface TaskQuery extends PaginationQuery {
   list_id?: number;
   status?: TaskStatus;

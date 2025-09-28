@@ -1,3 +1,6 @@
+import { User } from "../auth/user.js";
+import { BaseEntity } from "../base/entity.js";
+
 export interface Attachment extends BaseEntity {
   filename: string;
   original_name: string;
