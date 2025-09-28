@@ -1,6 +1,8 @@
-import type { UserSession } from "@auth/session.js";
-import type { UserWithRole } from "@auth/user.js";
-import type { DashboardLayout, NotificationSettings } from "@system/notification.js";
+// src/types/auth/requests.ts (FIXED VERSION)
+import type { Request } from 'express';
+import type { DashboardLayout, NotificationSettings } from '../system/notification.js';
+import type { UserSession } from './session.js';
+import type { UserWithRole } from './user.js';
 
 export interface LoginRequest {
   email: string;
@@ -22,7 +24,6 @@ export interface AuthRequest extends Request {
   session?: UserSession;
 }
 
-
 export interface RefreshTokenRequest {
   refresh_token: string;
 }
@@ -41,7 +42,6 @@ export interface ResetPasswordRequest {
   new_password: string;
 }
 
-
 export interface CreateRoleRequest {
   name: string;
   display_name: string;
@@ -55,7 +55,6 @@ export interface UpdateRoleRequest {
   permissions?: string[];
   is_active?: boolean;
 }
-
 
 export interface CreateUserRequest {
   email: string;

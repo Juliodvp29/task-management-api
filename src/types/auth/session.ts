@@ -1,3 +1,6 @@
+import type { BaseEntity } from "../base/entity.js";
+import type { User } from "./user.js";
+
 export interface UserSession extends BaseEntity {
   user_id: number;
   session_token: string;
