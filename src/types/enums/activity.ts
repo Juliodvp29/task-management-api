@@ -1,0 +1,9 @@
+export enum ActivityAction {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  COMPLETE_TASK = 'COMPLETE_TASK',
+  MOVE_TASK = 'MOVE_TASK'
+}

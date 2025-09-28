@@ -1,0 +1,83 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    "rootDir": "./src",
+    "outDir": "./dist",
+    // Environment Settings
+    // See also https://aka.ms/tsconfig/module
+    "module": "nodenext",
+    "target": "es2023",
+    "types": [],
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@auth/*": [
+        "src/types/auth/*"
+      ],
+      "@base/*": [
+        "src/types/base/*"
+      ],
+      "@calendar/*": [
+        "src/types/calendar/*"
+      ],
+      "@config/*": [
+        "src/types/config/*"
+      ],
+      "@constants/*": [
+        "src/types/constants/*"
+      ],
+      "@enums/*": [
+        "src/types/enums/*"
+      ],
+      "@queries/*": [
+        "src/types/queries/*"
+      ],
+      "@system/*": [
+        "src/types/system/*"
+      ],
+      "@task/*": [
+        "src/types/task/*"
+      ],
+      "@utils/*": [
+        "src/types/utils/*"
+      ],
+      "@websocket/*": [
+        "src/types/websocket/*"
+      ],
+    },
+    // For nodejs:
+    // "lib": ["esnext"],
+    // "types": ["node"],
+    // and npm install -D @types/node
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    // Style Options
+    // "noImplicitReturns": true,
+    // "noImplicitOverride": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "noFallthroughCasesInSwitch": true,
+    // "noPropertyAccessFromIndexSignature": true,
+    // Recommended Options
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+  }
+}
