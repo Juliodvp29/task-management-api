@@ -1,3 +1,7 @@
+import type { User } from "../auth/user.js";
+import type { BaseEntity } from "../base/entity.js";
+import type { EventType } from "../enums/event.js";
+
 export interface CalendarEvent extends BaseEntity {
   title: string;
   description?: string;

@@ -1,3 +1,5 @@
+import type { UserWithRole } from "./user.js";
+
 export interface LoginResponse {
   user: UserWithRole;
   access_token: string;

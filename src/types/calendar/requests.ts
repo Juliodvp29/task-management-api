@@ -1,3 +1,6 @@
+import type { EventType } from "../enums/event.js";
+import type { RecurrenceRule } from "./event.js";
+
 export interface CreateCalendarEventRequest {
   title: string;
   description?: string;

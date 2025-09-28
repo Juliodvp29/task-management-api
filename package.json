@@ -1,15 +1,23 @@
 {
   "name": "task-management-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "API para gestión de tareas con Node.js y TypeScript",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "start": "node --env-file=.env dist/index.js",
-    "dev": "node --env-file=.env --loader ts-node/esm src/index.ts",
-    "build": "tsc"
+    "dev": "node --env-file=.env --loader ts-node/esm --experimental-specifier-resolution=node src/index.ts",
+    "build": "tsc",
+    "build:clean": "rimraf dist && npm run build",
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
+  "keywords": [
+    "api",
+    "nodejs",
+    "typescript",
+    "express",
+    "mysql"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,6 +27,7 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
     "mysql2": "^3.15.1"
   },
   "devDependencies": {
@@ -26,9 +35,15 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^24.5.2",
     "nodemon": "^3.1.10",
-    "ts-node-dev": "^2.0.0",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   }
 }
