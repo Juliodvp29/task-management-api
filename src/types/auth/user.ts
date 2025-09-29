@@ -21,7 +21,6 @@ export interface User extends BaseEntity {
   login_attempts: number;
   locked_until?: Date;
 
-  // Relaciones
   role?: Role;
   settings?: UserSettings;
 }

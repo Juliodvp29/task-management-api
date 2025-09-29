@@ -14,7 +14,6 @@ export interface CalendarEvent extends BaseEntity {
   created_by: number;
   is_active: boolean;
 
-  // Relación
   creator?: User;
 }
 

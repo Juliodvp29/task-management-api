@@ -11,6 +11,5 @@ export interface UserSession extends BaseEntity {
   is_active: boolean;
   expires_at: Date;
 
-  // Relación
   user?: User;
 }
