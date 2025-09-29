@@ -66,29 +66,40 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
 
 
 // Obtener usuario por email con rol
+
 export const getUserByEmail = async (
   email: string
 ): Promise<UserWithRole | null> => {
   const sql = `
-    SELECT u.*, 
-           r.name as role_name, 
-           r.display_name as role_display_name, 
-           r.permissions, 
-           r.is_active as role_is_active
-    FROM users u
-    INNER JOIN roles r ON u.role_id = r.id
-    WHERE u.email = ?
-  `;
+  SELECT u.*,
+         r.name as role_name,
+         r.display_name as role_display_name,
+         r.permissions as role_permissions,
+         r.is_active as role_is_active
+  FROM users u
+  INNER JOIN roles r ON u.role_id = r.id
+  WHERE u.email = ?
+`;
 
   const user = await queryOne<any>(sql, [email]);
   if (!user) return null;
 
-  // Manejar permisos seguros
   let permissions: string[] = [];
   try {
-    permissions = user.permissions ? JSON.parse(user.permissions) : [];
+    if (Array.isArray(user.role_permissions)) {
+      permissions = user.role_permissions;
+    }
+    else if (typeof user.role_permissions === 'string' && user.role_permissions) {
+      permissions = JSON.parse(user.role_permissions);
+    }
+    else if (user.role_permissions) {
+      permissions = user.role_permissions;
+    }
+
+    console.log('Permissions from DB:', user.role_permissions);
+    console.log('Parsed permissions:', permissions);
   } catch (err) {
-    console.error('Error parseando permissions:', err, user.permissions);
+    console.error('Error parseando permissions:', err, user.role_permissions);
     permissions = [];
   }
 
@@ -110,7 +121,7 @@ export const getUserByEmail = async (
       id: user.role_id,
       name: user.role_name,
       display_name: user.role_display_name,
-      permissions, // ya validado
+      permissions,
       is_active: user.role_is_active,
       created_at: user.created_at,
       updated_at: user.updated_at
@@ -119,7 +130,6 @@ export const getUserByEmail = async (
 };
 
 
-// Obtener sesión activa por ID
 export const getActiveSessionById = async (sessionId: number): Promise<UserSession | null> => {
   const sql = `
     SELECT * FROM user_sessions 
@@ -129,13 +139,11 @@ export const getActiveSessionById = async (sessionId: number): Promise<UserSessi
   return await queryOne<UserSession>(sql, [sessionId]);
 };
 
-// Verificar si el usuario está bloqueado
 const isUserLocked = (user: UserWithRole): boolean => {
   if (!user.locked_until) return false;
   return new Date(user.locked_until) > new Date();
 };
 
-// Bloquear usuario después de muchos intentos fallidos
 const lockUser = async (userId: number): Promise<void> => {
   const lockedUntil = new Date(Date.now() + LOCKOUT_TIME);
   const sql = `
@@ -147,7 +155,6 @@ const lockUser = async (userId: number): Promise<void> => {
   await query(sql, [lockedUntil, userId]);
 };
 
-// Incrementar intentos de login
 const incrementLoginAttempts = async (userId: number): Promise<number> => {
   const sql = `
     UPDATE users 
@@ -161,7 +168,6 @@ const incrementLoginAttempts = async (userId: number): Promise<number> => {
   return user?.login_attempts || 0;
 };
 
-// Resetear intentos de login
 const resetLoginAttempts = async (userId: number): Promise<void> => {
   const sql = `
     UPDATE users 
@@ -172,7 +178,6 @@ const resetLoginAttempts = async (userId: number): Promise<void> => {
   await query(sql, [userId]);
 };
 
-// Crear sesión de usuario
 const createUserSession = async (
   userId: number,
   deviceInfo?: string,
@@ -205,26 +210,21 @@ const createUserSession = async (
   };
 };
 
-// Registrar usuario
 export const registerUser = async (data: RegisterRequest): Promise<UserWithRole> => {
-  // Verificar si el email ya existe
   const existingUser = await getUserByEmail(data.email);
   if (existingUser) {
     throw new AppError('El email ya está registrado', 409, ERROR_CODES.DUPLICATE_ENTRY);
   }
 
-  // Verificar que el rol existe y está activo
-  const roleId = data.role_id || 4; // Rol por defecto: usuario
+  const roleId = data.role_id || 4;
   const role = await queryOne<Role>('SELECT * FROM roles WHERE id = ? AND is_active = 1', [roleId]);
 
   if (!role) {
     throw new AppError('Rol no válido', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
-  // Hashear la contraseña
   const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  // Crear usuario
   const sql = `
     INSERT INTO users (email, password_hash, first_name, last_name, role_id)
     VALUES (?, ?, ?, ?, ?)
@@ -246,7 +246,6 @@ export const registerUser = async (data: RegisterRequest): Promise<UserWithRole>
   return user;
 };
 
-// Iniciar sesión
 export const loginUser = async (
   data: LoginRequest,
   ipAddress?: string,
