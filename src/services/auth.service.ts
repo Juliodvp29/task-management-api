@@ -15,13 +15,16 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
 
 // Obtener usuario por ID con rol
+
 export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   const sql = `
     SELECT u.*, 
            r.name as role_name, 
            r.display_name as role_display_name, 
            r.permissions, 
-           r.is_active as role_is_active
+           r.is_active as role_is_active,
+           r.created_at as role_created_at,
+           r.updated_at as role_updated_at
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
     WHERE u.id = ?
@@ -32,7 +35,18 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
 
   let permissions: string[] = [];
   try {
-    permissions = user.permissions ? JSON.parse(user.permissions) : [];
+    // Si permissions ya es un array (MySQL lo parseó automáticamente)
+    if (Array.isArray(user.permissions)) {
+      permissions = user.permissions;
+    }
+    // Si es un string, intentar parsearlo
+    else if (typeof user.permissions === 'string') {
+      permissions = JSON.parse(user.permissions);
+    }
+    // Si es null o undefined
+    else {
+      permissions = [];
+    }
   } catch (err) {
     console.error('Error parseando permissions en getUserById:', err, user.permissions);
     permissions = [];
@@ -56,14 +70,13 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
       id: user.role_id,
       name: user.role_name,
       display_name: user.role_display_name,
-      permissions, // ya validado
+      permissions,
       is_active: user.role_is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at
+      created_at: user.role_created_at,
+      updated_at: user.role_updated_at
     }
   };
 };
-
 
 // Obtener usuario por email con rol
 

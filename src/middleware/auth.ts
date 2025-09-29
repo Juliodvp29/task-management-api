@@ -1,12 +1,12 @@
 // src/middleware/auth.ts
+import type { NextFunction, Response } from 'express';
 import { verifyAccessToken } from '../config/jwt.js';
 import { getActiveSessionById, getUserById } from '../services/auth.service.js';
-import { AppError } from '../types/base/error.js';
-import { ERROR_CODES } from '../types/constants/errors.js';
 import type { AuthRequest } from '../types/auth/requests.js';
 import type { JWTPayload } from '../types/auth/responses.js';
+import { AppError } from '../types/base/error.js';
+import { ERROR_CODES } from '../types/constants/errors.js';
 import type { Permission } from '../types/constants/permissions.js';
-import type { NextFunction, Response } from 'express';
 
 // Middleware principal de autenticación
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -48,6 +48,11 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       throw new AppError('Rol deshabilitado', 401, ERROR_CODES.PERMISSION_DENIED);
     }
 
+    if (!user.role.permissions || user.role.permissions.length === 0) {
+      user.role.permissions = payload.permissions ?? [];
+    }
+
+
     // Agregar usuario y sesión al request
     req.user = user;
     req.session = session;
@@ -62,6 +67,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 export const requirePermission = (permission: Permission) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      console.log('req.user', req.user);
+
       if (!req.user) {
         throw new AppError('Usuario no autenticado', 401, ERROR_CODES.TOKEN_INVALID);
       }

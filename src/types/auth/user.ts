@@ -39,5 +39,6 @@ export interface UserSettings extends BaseEntity {
 
 export interface UserWithRole extends User {
   role: Role;
+  permissions?: any
 }
 

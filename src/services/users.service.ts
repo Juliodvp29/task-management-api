@@ -5,7 +5,7 @@ import type {
   UpdateUserRequest,
   UpdateUserSettingsRequest
 } from '../types/auth/requests.js';
-import type { Role, User, UserSettings, UserWithRole } from '../types/auth/user.js';
+import type { Role, UserSettings, UserWithRole } from '../types/auth/user.js';
 import type { PaginationQuery } from '../types/base/api.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
@@ -14,6 +14,7 @@ import { DEFAULT_PAGINATION } from '../types/constants/pagination.js';
 const SALT_ROUNDS = 12;
 
 // Obtener todos los usuarios con paginación y filtros
+
 export const getAllUsers = async (
   filters: PaginationQuery & {
     role_id?: number;
@@ -35,7 +36,7 @@ export const getAllUsers = async (
 
   if (filters.is_active !== undefined) {
     whereClauses.push('u.is_active = ?');
-    params.push(filters.is_active);
+    params.push(filters.is_active ? 1 : 0); // Convertir boolean a número
   }
 
   if (filters.search) {
@@ -54,12 +55,18 @@ export const getAllUsers = async (
     FROM users u
     ${whereClause}
   `;
-  const [countResult] = await query<{ total: number }>(countSql, params);
-  const total = countResult?.total ?? 0;
+
+  const countResult = await query<{ total: number }>(countSql, params);
+  const total = countResult[0]?.total ?? 0;
 
   // Obtener usuarios
   const sortBy = filters.sort_by || 'created_at';
   const sortOrder = filters.sort_order || 'DESC';
+
+  // Validar sortBy para prevenir SQL injection
+  const allowedSortFields = ['id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at', 'last_login'];
+  const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+  const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
   const usersSql = `
     SELECT 
@@ -75,11 +82,17 @@ export const getAllUsers = async (
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
     ${whereClause}
-    ORDER BY u.${sortBy} ${sortOrder}
+    ORDER BY u.${validSortBy} ${validSortOrder}
     LIMIT ? OFFSET ?
   `;
 
-  const users = await query<any>(usersSql, [...params, limit, offset]);
+  // IMPORTANTE: Asegurarse de que limit y offset sean números enteros
+  const usersParams = [...params, parseInt(String(limit)), parseInt(String(offset))];
+
+  console.log('SQL:', usersSql);
+  console.log('Params:', usersParams);
+
+  const users = await query<any>(usersSql, usersParams);
 
   const usersWithRole: UserWithRole[] = users.map((user) => {
     let permissions: string[] = [];

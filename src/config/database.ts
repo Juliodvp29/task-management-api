@@ -47,9 +47,14 @@ export const testConnection = async (): Promise<boolean> => {
 };
 
 // Función para ejecutar queries
+// CAMBIO: Usar pool.query en lugar de pool.execute para mejor compatibilidad
 export const query = async <T = any>(sql: string, params: any[] = []): Promise<T[]> => {
   try {
-    const [rows] = await pool.execute(sql, params);
+    // Asegurarse de que params sea siempre un array
+    const safeParams = Array.isArray(params) ? params : [];
+
+    // pool.query maneja mejor los tipos de datos que pool.execute
+    const [rows] = await pool.query(sql, safeParams);
     return rows as T[];
   } catch (error) {
     console.error('Error ejecutando query:', error);
@@ -63,14 +68,15 @@ export const queryOne = async <T = any>(
   params: any[] = []
 ): Promise<T | null> => {
   const results = await query<T>(sql, params);
-  if (results.length === 0) return null;        // ✅ explícito
-  return results[0] as T;                       // ✅ ahora TS sabe que no es undefined
+  if (results.length === 0) return null;
+  return results[0] as T;
 };
 
 // Función para ejecutar inserts y obtener el ID
 export const insert = async (sql: string, params: any[] = []): Promise<number> => {
   try {
-    const [result] = await pool.execute(sql, params);
+    const safeParams = Array.isArray(params) ? params : [];
+    const [result] = await pool.query(sql, safeParams);
     return (result as any).insertId;
   } catch (error) {
     console.error('Error ejecutando insert:', error);
