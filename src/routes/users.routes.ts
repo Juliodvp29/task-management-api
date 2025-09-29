@@ -3,13 +3,14 @@ import { Router } from 'express';
 import { authenticate, requirePermission } from '../middleware/auth.js';
 import { validatePassword, validateQuery, validateRequest } from '../middleware/validation.js';
 import {
-  changeUserPassword,
+  changeUserPasswordWithCode,
   createUser,
   deleteUser,
   deleteUserPermanently,
   getAllUsers,
   getUserByIdService,
   getUserSettings,
+  requestPasswordChangeCode,
   toggleUserStatus,
   updateUser,
   updateUserSettings
@@ -36,7 +37,8 @@ const updateUserValidation = {
   role_id: { min: 1 }
 };
 
-const changePasswordValidation = {
+const changePasswordWithCodeValidation = {
+  verification_code: { required: true, minLength: 6, maxLength: 6 },
   new_password: { required: true, minLength: 8 }
 };
 
@@ -91,7 +93,6 @@ router.get(
   requirePermission('users.view'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-
       const userId = parseInt(req.params.id as string);
 
       if (isNaN(userId)) {
@@ -123,7 +124,6 @@ router.post(
     try {
       const userData: CreateUserRequest = req.body;
 
-      // Validar contraseña
       const passwordValidation = validatePassword(userData.password);
       if (!passwordValidation.isValid) {
         throw new AppError(
@@ -221,7 +221,6 @@ router.delete(
         throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // No permitir que un usuario se elimine a sí mismo
       if (req.user?.id === userId) {
         throw new AppError(
           'No puedes eliminarte a ti mismo',
@@ -257,7 +256,6 @@ router.delete(
         throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // No permitir que un usuario se elimine a sí mismo
       if (req.user?.id === userId) {
         throw new AppError(
           'No puedes eliminarte a ti mismo',
@@ -280,12 +278,15 @@ router.delete(
   }
 );
 
-// PUT /users/:id/password - Cambiar contraseña de usuario
-router.put(
-  '/:id/password',
+// ============================================
+// NUEVAS RUTAS PARA CAMBIO DE CONTRASEÑA
+// ============================================
+
+// POST /users/:id/password/request-code - Solicitar código de verificación
+router.post(
+  '/:id/password/request-code',
   authenticate,
   requirePermission('users.edit'),
-  validateRequest(changePasswordValidation),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = parseInt(req.params.id as string);
@@ -294,7 +295,35 @@ router.put(
         throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      const { new_password } = req.body;
+      await requestPasswordChangeCode(userId);
+
+      const response: ApiResponse = {
+        success: true,
+        message: 'Código de verificación enviado al correo del usuario'
+      };
+
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// PUT /users/:id/password - Cambiar contraseña con código de verificación
+router.put(
+  '/:id/password',
+  authenticate,
+  requirePermission('users.edit'),
+  validateRequest(changePasswordWithCodeValidation),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = parseInt(req.params.id as string);
+
+      if (isNaN(userId)) {
+        throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
+      }
+
+      const { verification_code, new_password } = req.body;
 
       // Validar contraseña
       const passwordValidation = validatePassword(new_password);
@@ -308,7 +337,7 @@ router.put(
         );
       }
 
-      await changeUserPassword(userId, new_password);
+      await changeUserPasswordWithCode(userId, verification_code, new_password);
 
       const response: ApiResponse = {
         success: true,
@@ -334,7 +363,6 @@ router.get(
         throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // Solo el propio usuario o admins pueden ver las configuraciones
       if (req.user?.id !== userId && !req.user?.role.permissions.includes('users.view')) {
         throw new AppError('No tienes permisos para ver estas configuraciones', 403, ERROR_CODES.PERMISSION_DENIED);
       }
@@ -366,7 +394,6 @@ router.put(
         throw new AppError('ID de usuario inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // Solo el propio usuario o admins pueden actualizar las configuraciones
       if (req.user?.id !== userId && !req.user?.role.permissions.includes('users.edit')) {
         throw new AppError('No tienes permisos para modificar estas configuraciones', 403, ERROR_CODES.PERMISSION_DENIED);
       }

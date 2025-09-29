@@ -10,8 +10,111 @@ import type { PaginationQuery } from '../types/base/api.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
 import { DEFAULT_PAGINATION } from '../types/constants/pagination.js';
+import {
+  generateVerificationCode,
+  sendPasswordChangeCode,
+  sendPasswordChangedConfirmation
+} from './email.service.js';
+
 
 const SALT_ROUNDS = 12;
+const CODE_EXPIRATION_MINUTES = 10;
+
+
+// Solicitar código de verificación para cambio de contraseña
+export const requestPasswordChangeCode = async (userId: number): Promise<void> => {
+  const user = await getUserByIdService(userId);
+
+  // Generar código de verificación
+  const code = generateVerificationCode();
+  const expiresAt = new Date(Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000);
+
+  // Guardar código en la base de datos
+  const sql = `
+    UPDATE users 
+    SET password_change_code = ?, 
+        password_change_code_expires = ?
+    WHERE id = ?
+  `;
+  await query(sql, [code, expiresAt, userId]);
+
+  // Enviar código por email
+  const userName = `${user.first_name} ${user.last_name}`;
+  await sendPasswordChangeCode(user.email, userName, code);
+};
+
+// Verificar código y cambiar contraseña
+export const changeUserPasswordWithCode = async (
+  userId: number,
+  code: string,
+  newPassword: string
+): Promise<void> => {
+  // Obtener usuario con código
+  const sql = `
+    SELECT id, email, first_name, last_name, 
+           password_change_code, password_change_code_expires 
+    FROM users 
+    WHERE id = ?
+  `;
+  const user = await queryOne<any>(sql, [userId]);
+
+  if (!user) {
+    throw new AppError('Usuario no encontrado', 404, ERROR_CODES.RESOURCE_NOT_FOUND);
+  }
+
+  // Verificar que existe un código
+  if (!user.password_change_code || !user.password_change_code_expires) {
+    throw new AppError(
+      'No hay solicitud de cambio de contraseña pendiente',
+      400,
+      ERROR_CODES.VALIDATION_ERROR
+    );
+  }
+
+  // Verificar que el código no ha expirado
+  if (new Date() > new Date(user.password_change_code_expires)) {
+    // Limpiar código expirado
+    await query('UPDATE users SET password_change_code = NULL, password_change_code_expires = NULL WHERE id = ?', [userId]);
+    throw new AppError(
+      'El código de verificación ha expirado',
+      400,
+      ERROR_CODES.TOKEN_EXPIRED
+    );
+  }
+
+  // Verificar que el código coincide
+  if (user.password_change_code !== code) {
+    throw new AppError(
+      'Código de verificación inválido',
+      400,
+      ERROR_CODES.TOKEN_INVALID
+    );
+  }
+
+  // Hash de la nueva contraseña
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  // Actualizar contraseña y limpiar código
+  const updateSql = `
+    UPDATE users 
+    SET password_hash = ?,
+        password_change_code = NULL,
+        password_change_code_expires = NULL
+    WHERE id = ?
+  `;
+  await query(updateSql, [hashedPassword, userId]);
+
+  // Enviar email de confirmación
+  const userName = `${user.first_name} ${user.last_name}`;
+  await sendPasswordChangedConfirmation(user.email, userName);
+};
+
+// Función existente actualizada (mantener como respaldo)
+export const changeUserPassword = async (id: number, newPassword: string): Promise<void> => {
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  const sql = 'UPDATE users SET password_hash = ? WHERE id = ?';
+  await query(sql, [hashedPassword, id]);
+};
 
 // Obtener todos los usuarios con paginación y filtros
 
@@ -336,12 +439,12 @@ export const deleteUserPermanently = async (id: number): Promise<void> => {
   await query(sql, [id]);
 };
 
-// Cambiar contraseña de usuario
-export const changeUserPassword = async (id: number, newPassword: string): Promise<void> => {
-  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-  const sql = 'UPDATE users SET password_hash = ? WHERE id = ?';
-  await query(sql, [hashedPassword, id]);
-};
+// // Cambiar contraseña de usuario
+// export const changeUserPassword = async (id: number, newPassword: string): Promise<void> => {
+//   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+//   const sql = 'UPDATE users SET password_hash = ? WHERE id = ?';
+//   await query(sql, [hashedPassword, id]);
+// };
 
 // Obtener configuraciones de usuario
 export const getUserSettings = async (userId: number): Promise<UserSettings> => {
@@ -439,3 +542,6 @@ export const toggleUserStatus = async (id: number): Promise<UserWithRole> => {
 
   return await getUserByIdService(id);
 };
+
+
+

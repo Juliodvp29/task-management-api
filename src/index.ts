@@ -1,6 +1,7 @@
 // src/index.ts
 import app from './app.js';
 import { testConnection } from './config/database.js';
+import { verifyEmailConfig } from './config/email.js';
 
 // Cargar variables de entorno
 
@@ -22,6 +23,14 @@ const startServer = async () => {
     if (!dbConnected) {
       console.error('❌ No se pudo conectar a la base de datos. Saliendo...');
       process.exit(1);
+    }
+
+    console.log('📧 Verificando configuración de email...');
+    const emailConfigured = await verifyEmailConfig();
+
+    if (!emailConfigured) {
+      console.warn('⚠️  Email no configurado correctamente. El envío de correos no funcionará.');
+      console.warn('⚠️  Por favor, configura las variables SMTP en el archivo .env');
     }
 
     // Iniciar servidor HTTP

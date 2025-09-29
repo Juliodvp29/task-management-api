@@ -406,3 +406,13 @@ LEFT JOIN task_lists tl ON u.id = tl.user_id AND tl.is_active = TRUE
 LEFT JOIN tasks t ON tl.id = t.list_id
 WHERE u.is_active = TRUE
 GROUP BY u.id, u.first_name, u.last_name, u.email;
+
+
+-- Agregar nuevas columnas a la tabla users
+ALTER TABLE users
+ADD COLUMN password_change_code VARCHAR(6) NULL AFTER password_reset_expires,
+ADD COLUMN password_change_code_expires TIMESTAMP NULL AFTER password_change_code,
+ADD INDEX idx_users_password_change_code (password_change_code);
+
+-- Nota: Estos campos se usarán para almacenar temporalmente el código de verificación
+-- cuando un administrador quiera cambiar la contraseña de un usuario
