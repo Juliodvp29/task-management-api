@@ -17,8 +17,11 @@ const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
 // Obtener usuario por ID con rol
 export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   const sql = `
-    SELECT u.*, r.name as role_name, r.display_name as role_display_name, 
-           r.permissions, r.is_active as role_is_active
+    SELECT u.*, 
+           r.name as role_name, 
+           r.display_name as role_display_name, 
+           r.permissions, 
+           r.is_active as role_is_active
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
     WHERE u.id = ?
@@ -27,6 +30,14 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   const user = await queryOne<any>(sql, [id]);
   if (!user) return null;
 
+  let permissions: string[] = [];
+  try {
+    permissions = user.permissions ? JSON.parse(user.permissions) : [];
+  } catch (err) {
+    console.error('Error parseando permissions en getUserById:', err, user.permissions);
+    permissions = [];
+  }
+
   return {
     id: user.id,
     email: user.email,
@@ -45,7 +56,7 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
       id: user.role_id,
       name: user.role_name,
       display_name: user.role_display_name,
-      permissions: JSON.parse(user.permissions || '[]'),
+      permissions, // ya validado
       is_active: user.role_is_active,
       created_at: user.created_at,
       updated_at: user.updated_at
@@ -53,11 +64,17 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   };
 };
 
+
 // Obtener usuario por email con rol
-export const getUserByEmail = async (email: string): Promise<UserWithRole | null> => {
+export const getUserByEmail = async (
+  email: string
+): Promise<UserWithRole | null> => {
   const sql = `
-    SELECT u.*, r.name as role_name, r.display_name as role_display_name, 
-           r.permissions, r.is_active as role_is_active
+    SELECT u.*, 
+           r.name as role_name, 
+           r.display_name as role_display_name, 
+           r.permissions, 
+           r.is_active as role_is_active
     FROM users u
     INNER JOIN roles r ON u.role_id = r.id
     WHERE u.email = ?
@@ -66,6 +83,15 @@ export const getUserByEmail = async (email: string): Promise<UserWithRole | null
   const user = await queryOne<any>(sql, [email]);
   if (!user) return null;
 
+  // Manejar permisos seguros
+  let permissions: string[] = [];
+  try {
+    permissions = user.permissions ? JSON.parse(user.permissions) : [];
+  } catch (err) {
+    console.error('Error parseando permissions:', err, user.permissions);
+    permissions = [];
+  }
+
   return {
     id: user.id,
     email: user.email,
@@ -84,13 +110,14 @@ export const getUserByEmail = async (email: string): Promise<UserWithRole | null
       id: user.role_id,
       name: user.role_name,
       display_name: user.role_display_name,
-      permissions: JSON.parse(user.permissions || '[]'),
+      permissions, // ya validado
       is_active: user.role_is_active,
       created_at: user.created_at,
       updated_at: user.updated_at
     }
   };
 };
+
 
 // Obtener sesión activa por ID
 export const getActiveSessionById = async (sessionId: number): Promise<UserSession | null> => {
@@ -242,8 +269,8 @@ export const loginUser = async (
   }
 
   // Verificar la contraseña
-  const userWithPassword = await queryOne<any>('SELECT password FROM users WHERE id = ?', [user.id]);
-  const isValidPassword = await bcrypt.compare(data.password, userWithPassword.password);
+  const userWithPassword = await queryOne<any>('SELECT password_hash FROM users WHERE id = ?', [user.id]);
+  const isValidPassword = await bcrypt.compare(data.password, userWithPassword.password_hash);
 
   if (!isValidPassword) {
     const attempts = await incrementLoginAttempts(user.id);
