@@ -54,9 +54,10 @@ app.get('/api', (req, res) => {
       documentation: '/api/docs', // Para cuando agregues documentación
       endpoints: {
         auth: '/api/auth',
+        users: '/api/users',
+        roles: '/api/roles'
         // tasks: '/api/tasks',
         // lists: '/api/lists',
-        // users: '/api/users',
         // calendar: '/api/calendar'
       }
     }

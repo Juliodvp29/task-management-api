@@ -2,7 +2,9 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 
-import authRoutes from './auth.routes.js';
+import { default as authRoutes, default as rolesRoutes } from './auth.routes.js';
+import usersRoutes from './users.routes.js';
+
 // Importar futuras rutas aquí
 // import taskRoutes from './task.routes.js';
 // import listRoutes from './list.routes.js';
@@ -37,10 +39,16 @@ const apiLimiter = rateLimit({
 // Rutas de autenticación (con rate limiting más estricto)
 router.use('/auth', authLimiter, authRoutes);
 
+
+
 // Futuras rutas de la API (con rate limiting normal)
+router.use('/users', apiLimiter, usersRoutes);
+router.use('/roles', apiLimiter, rolesRoutes);
+
+
+
 // router.use('/tasks', apiLimiter, taskRoutes);
 // router.use('/lists', apiLimiter, listRoutes);
-// router.use('/users', apiLimiter, userRoutes);
 // router.use('/calendar', apiLimiter, calendarRoutes);
 
 export default router;
