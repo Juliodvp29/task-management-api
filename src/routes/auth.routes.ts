@@ -1,13 +1,13 @@
 // src/routes/auth.routes.ts
-import { authenticate } from '@/middleware/auth.js';
-import { validateRequest } from '@/middleware/validation.js';
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from '@/services/auth.service.js';
-import { AppError } from '@/types/base/error.js';
-import { ERROR_CODES } from '@/types/constants/errors.js';
-import type { AuthRequest, LoginRequest, RefreshTokenRequest, RegisterRequest } from '@auth/requests.js';
-import type { ApiResponse } from '@base/api.js';
 import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
+import { validateRequest } from '../middleware/validation.js';
+import { loginUser, logoutUser, refreshAccessToken, registerUser } from '../services/auth.service.js';
+import type { AuthRequest, LoginRequest, RefreshTokenRequest, RegisterRequest } from '../types/auth/requests.js';
+import type { ApiResponse } from '../types/base/api.js';
+import { AppError } from '../types/base/error.js';
+import { ERROR_CODES } from '../types/constants/errors.js';
 
 const router = Router();
 

@@ -6,9 +6,15 @@ import { testConnection } from './config/database.js';
 
 const PORT = process.env.PORT || 3000;
 
+
+
+
+
 // Función para inicializar el servidor
 const startServer = async () => {
   try {
+
+
     // Probar conexión a la base de datos
     console.log('🔗 Conectando a la base de datos...');
     const dbConnected = await testConnection();
@@ -82,6 +88,10 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Razón:', reason);
   process.exit(1);
 });
+
+
+
+
 
 // Iniciar la aplicación
 startServer();

@@ -1,8 +1,8 @@
 // src/middleware/validation.ts
-import { AppError } from '@/types/base/error.js';
-import { ERROR_CODES } from '@/types/constants/errors.js';
-import type { FieldValidation, ValidatorConstraints } from '@/types/utils/validation.js';
 import type { NextFunction, Request, Response } from 'express';
+import { AppError } from '../types/base/error.js';
+import { ERROR_CODES } from '../types/constants/errors.js';
+import type { FieldValidation, ValidatorConstraints } from '../types/utils/validation.js';
 
 export const validateRequest = (validation: FieldValidation) => {
   return (req: Request, res: Response, next: NextFunction) => {

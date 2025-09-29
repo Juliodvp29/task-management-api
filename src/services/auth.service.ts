@@ -1,12 +1,12 @@
 // src/services/auth.service.ts
-import { insert, query, queryOne } from '@/config/database.js';
-import { generateAccessToken, generateRefreshToken, getAccessTokenExpirationTime } from '@/config/jwt.js';
-import type { LoginRequest, RegisterRequest } from '@auth/requests.js';
-import type { JWTPayload, LoginResponse } from '@auth/responses.js';
-import type { UserSession } from '@auth/session.js';
-import type { Role, UserWithRole } from '@auth/user.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { insert, query, queryOne } from '../config/database.js';
+import { generateAccessToken, generateRefreshToken, getAccessTokenExpirationTime } from '../config/jwt.js';
+import type { LoginRequest, RegisterRequest } from '../types/auth/requests.js';
+import type { JWTPayload, LoginResponse } from '../types/auth/responses.js';
+import type { UserSession } from '../types/auth/session.js';
+import type { Role, UserWithRole } from '../types/auth/user.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
 
@@ -199,7 +199,7 @@ export const registerUser = async (data: RegisterRequest): Promise<UserWithRole>
 
   // Crear usuario
   const sql = `
-    INSERT INTO users (email, password, first_name, last_name, role_id)
+    INSERT INTO users (email, password_hash, first_name, last_name, role_id)
     VALUES (?, ?, ?, ?, ?)
   `;
 

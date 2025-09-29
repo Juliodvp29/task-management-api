@@ -1,10 +1,10 @@
 // src/middleware/index.ts
 import cors from 'cors';
 import express, { type Application } from 'express';
-import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import rateLimit from 'express-rate-limit';
 import { errorHandler } from './errorHandler.js';
 
 // Configuración de CORS
@@ -97,7 +97,7 @@ export const setupMiddlewares = (app: Application) => {
 
 export const setupErrorHandling = (app: Application) => {
   // Middleware para rutas no encontradas (debe ir antes del error handler)
-  app.use('*', (req, res) => {
+  app.use(/.*/, (req, res) => {
     res.status(404).json({
       success: false,
       message: `Ruta ${req.method} ${req.originalUrl} no encontrada`,

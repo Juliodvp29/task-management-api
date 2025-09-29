@@ -1,9 +1,9 @@
 // src/config/jwt.ts
-import type { JWTPayload } from '@auth/responses.js';
-import { AppError } from '@base/error.js';
-import { ERROR_CODES } from '@constants/errors.js';
 import type { SignOptions } from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
+import type { JWTPayload } from '../types/auth/responses.js';
+import { AppError } from '../types/base/error.js';
+import { ERROR_CODES } from '../types/constants/errors.js';
 
 export interface JWTConfig {
   secret: string;

@@ -1,11 +1,11 @@
 // src/middleware/auth.ts
-import { verifyAccessToken } from '@/config/jwt.js';
-import { getActiveSessionById, getUserById } from '@/services/auth.service.js';
-import { AppError } from '@/types/base/error.js';
-import { ERROR_CODES } from '@/types/constants/errors.js';
-import type { AuthRequest } from '@auth/requests.js';
-import type { JWTPayload } from '@auth/responses.js';
-import type { Permission } from '@constants/permissions.js';
+import { verifyAccessToken } from '../config/jwt.js';
+import { getActiveSessionById, getUserById } from '../services/auth.service.js';
+import { AppError } from '../types/base/error.js';
+import { ERROR_CODES } from '../types/constants/errors.js';
+import type { AuthRequest } from '../types/auth/requests.js';
+import type { JWTPayload } from '../types/auth/responses.js';
+import type { Permission } from '../types/constants/permissions.js';
 import type { NextFunction, Response } from 'express';
 
 // Middleware principal de autenticación
