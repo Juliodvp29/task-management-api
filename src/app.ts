@@ -1,4 +1,3 @@
-// src/app.ts
 import express from 'express';
 import { setupErrorHandling, setupMiddlewares } from './middleware/index.js';
 import apiRoutes from './routes/index.js';
@@ -6,10 +5,8 @@ import type { ApiResponse } from './types/base/api.js';
 
 const app = express();
 
-// Configurar middlewares
 setupMiddlewares(app);
 
-// Ruta principal de health check
 app.get('/', (req, res) => {
   const response: ApiResponse = {
     success: true,
@@ -26,7 +23,6 @@ app.get('/', (req, res) => {
   res.json(response);
 });
 
-// Ruta específica para health checks (para monitoreo/load balancers)
 app.get('/health', (req, res) => {
   const response: ApiResponse = {
     success: true,
@@ -44,14 +40,13 @@ app.get('/health', (req, res) => {
   res.json(response);
 });
 
-// Ruta para información de la API
 app.get('/api', (req, res) => {
   const response: ApiResponse = {
     success: true,
     message: 'Task Management API',
     data: {
       version: process.env.API_VERSION || '1.0.0',
-      documentation: '/api/docs', // Para cuando agregues documentación
+      documentation: '/api/docs',
       endpoints: {
         auth: '/api/auth',
         users: '/api/users',
@@ -65,10 +60,8 @@ app.get('/api', (req, res) => {
   res.json(response);
 });
 
-// Todas las rutas de la API
 app.use('/api', apiRoutes);
 
-// Configurar manejo de errores (debe ir al final)
 setupErrorHandling(app);
 
 export default app;

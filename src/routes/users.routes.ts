@@ -22,7 +22,6 @@ import { ERROR_CODES } from '../types/constants/errors.js';
 
 const router = Router();
 
-// Validaciones
 const createUserValidation = {
   email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
   password: { required: true, minLength: 8 },
@@ -47,7 +46,7 @@ const paginationValidation = {
   limit: { min: 1, max: 100 }
 };
 
-// GET /users - Obtener todos los usuarios (con paginación)
+
 router.get(
   '/',
   authenticate,
@@ -86,7 +85,6 @@ router.get(
   }
 );
 
-// GET /users/:id - Obtener usuario por ID
 router.get(
   '/:id',
   authenticate,
@@ -114,12 +112,12 @@ router.get(
   }
 );
 
-// POST /users - Crear usuario
 router.post(
   '/',
   authenticate,
   requirePermission('users.create'),
   validateRequest(createUserValidation),
+  // POST / - Create a new user
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userData: CreateUserRequest = req.body;
@@ -150,7 +148,6 @@ router.post(
   }
 );
 
-// PUT /users/:id - Actualizar usuario
 router.put(
   '/:id',
   authenticate,
@@ -180,7 +177,6 @@ router.put(
   }
 );
 
-// PATCH /users/:id/status - Activar/Desactivar usuario
 router.patch(
   '/:id/status',
   authenticate,
@@ -208,7 +204,6 @@ router.patch(
   }
 );
 
-// DELETE /users/:id - Eliminar usuario (soft delete)
 router.delete(
   '/:id',
   authenticate,
@@ -243,7 +238,6 @@ router.delete(
   }
 );
 
-// DELETE /users/:id/permanent - Eliminar usuario permanentemente
 router.delete(
   '/:id/permanent',
   authenticate,
@@ -278,11 +272,8 @@ router.delete(
   }
 );
 
-// ============================================
-// NUEVAS RUTAS PARA CAMBIO DE CONTRASEÑA
-// ============================================
 
-// POST /users/:id/password/request-code - Solicitar código de verificación
+
 router.post(
   '/:id/password/request-code',
   authenticate,
@@ -309,7 +300,6 @@ router.post(
   }
 );
 
-// PUT /users/:id/password - Cambiar contraseña con código de verificación
 router.put(
   '/:id/password',
   authenticate,
@@ -351,7 +341,6 @@ router.put(
   }
 );
 
-// GET /users/:id/settings - Obtener configuraciones de usuario
 router.get(
   '/:id/settings',
   authenticate,
@@ -382,7 +371,6 @@ router.get(
   }
 );
 
-// PUT /users/:id/settings - Actualizar configuraciones de usuario
 router.put(
   '/:id/settings',
   authenticate,

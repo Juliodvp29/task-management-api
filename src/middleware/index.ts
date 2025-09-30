@@ -1,13 +1,13 @@
-// src/middleware/index.ts
 import cors from 'cors';
 import express, { type Application } from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
-import rateLimit from 'express-rate-limit';
 import { errorHandler } from './errorHandler.js';
 
-// Configuración de CORS
+/**
+ * CORS configuration for allowed origins, headers, and methods.
+ */
 const corsOptions = {
   origin: process.env.CORS_ORIGINS?.split(',') || [
     'http://localhost:3000',
@@ -20,23 +20,28 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
-// Rate limiting global
+/**
+ * Global rate limiter to prevent abuse (max 1000 requests per 15 minutes per IP).
+ * Excludes `/health` and `/` routes from rate limiting.
+ */
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000, // límite muy alto para uso general
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   message: {
     success: false,
-    message: 'Demasiadas solicitudes desde esta IP'
+    message: 'Too many requests from this IP'
   },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting para health checks
     return req.path === '/health' || req.path === '/';
   }
 });
 
-// Configuración de helmet para seguridad
+/**
+ * Helmet configuration for security headers.
+ * Includes CSP, CORP, and other protections.
+ */
 const helmetConfig = helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
@@ -49,45 +54,49 @@ const helmetConfig = helmet({
   },
 });
 
-// Configuración de morgan para logging
+/**
+ * Morgan configuration for logging HTTP requests.
+ * Uses 'combined' format in production, 'dev' in development.
+ */
 const morganConfig = process.env.NODE_ENV === 'production'
   ? morgan('combined')
   : morgan('dev');
 
+/**
+ * Setup global middlewares for the Express app.
+ * Includes helmet, CORS, logging, rate limiting, body parsers, and request IDs.
+ */
 export const setupMiddlewares = (app: Application) => {
-  // Trust proxy para obtener IP real (importante para rate limiting)
+  // Trust proxy (needed for correct IP detection when behind a proxy like Nginx)
   app.set('trust proxy', 1);
 
-  // Middleware de seguridad
+  // Security headers
   app.use(helmetConfig);
 
-  // CORS
+  // Cross-origin requests
   app.use(cors(corsOptions));
 
-  // Logging
+  // HTTP request logging
   app.use(morganConfig);
 
-  // Rate limiting global
+  // Rate limiting
   app.use(globalLimiter);
 
-  // Body parsers
+  // JSON parser with raw body capture
   app.use(express.json({
     limit: '10mb',
     verify: (req, res, buf) => {
-      // Guardar el raw body para webhooks si es necesario
       (req as any).rawBody = buf;
     }
   }));
 
+  // URL-encoded form parser
   app.use(express.urlencoded({
     extended: true,
     limit: '10mb'
   }));
 
-  // Middleware para parsear cookies si los necesitas
-  // app.use(cookieParser());
-
-  // Middleware personalizado para agregar información de request
+  // Attach request ID to each request/response
   app.use((req, res, next) => {
     (req as any).requestId = Math.random().toString(36).substring(2, 15);
     res.setHeader('X-Request-ID', (req as any).requestId);
@@ -95,16 +104,20 @@ export const setupMiddlewares = (app: Application) => {
   });
 };
 
+/**
+ * Setup error handling for the Express app.
+ * Includes a fallback 404 handler and the global error handler.
+ */
 export const setupErrorHandling = (app: Application) => {
-  // Middleware para rutas no encontradas (debe ir antes del error handler)
+  // Handle unknown routes (404)
   app.use(/.*/, (req, res) => {
     res.status(404).json({
       success: false,
-      message: `Ruta ${req.method} ${req.originalUrl} no encontrada`,
+      message: `Route ${req.method} ${req.originalUrl} not found`,
       error: 'NOT_FOUND'
     });
   });
 
-  // Error handler global (debe ir al final)
+  // Global error handler
   app.use(errorHandler);
 };

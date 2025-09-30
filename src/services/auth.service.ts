@@ -1,4 +1,3 @@
-// src/services/auth.service.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { insert, query, queryOne } from '../config/database.js';
@@ -12,9 +11,8 @@ import { ERROR_CODES } from '../types/constants/errors.js';
 
 const SALT_ROUNDS = 12;
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutos
+const LOCKOUT_TIME = 15 * 60 * 1000;
 
-// Obtener usuario por ID con rol
 
 export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   const sql = `
@@ -35,15 +33,12 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
 
   let permissions: string[] = [];
   try {
-    // Si permissions ya es un array (MySQL lo parseó automáticamente)
     if (Array.isArray(user.permissions)) {
       permissions = user.permissions;
     }
-    // Si es un string, intentar parsearlo
     else if (typeof user.permissions === 'string') {
       permissions = JSON.parse(user.permissions);
     }
-    // Si es null o undefined
     else {
       permissions = [];
     }
@@ -78,7 +73,6 @@ export const getUserById = async (id: number): Promise<UserWithRole | null> => {
   };
 };
 
-// Obtener usuario por email con rol
 
 export const getUserByEmail = async (
   email: string
@@ -199,7 +193,7 @@ const createUserSession = async (
 ): Promise<{ sessionId: number; sessionToken: string; refreshToken: string }> => {
   const sessionToken = crypto.randomBytes(32).toString('hex');
   const refreshTokenRaw = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const sql = `
     INSERT INTO user_sessions (user_id, session_token, refresh_token, device_info, ip_address, user_agent, expires_at)
@@ -270,17 +264,14 @@ export const loginUser = async (
     throw new AppError('Credenciales inválidas', 401, ERROR_CODES.INVALID_CREDENTIALS);
   }
 
-  // Verificar si el usuario está bloqueado
   if (isUserLocked(user)) {
     throw new AppError('Cuenta bloqueada temporalmente', 423, ERROR_CODES.ACCOUNT_LOCKED);
   }
 
-  // Verificar si el usuario está activo
   if (!user.is_active) {
     throw new AppError('Cuenta deshabilitada', 401, ERROR_CODES.ACCOUNT_LOCKED);
   }
 
-  // Verificar la contraseña
   const userWithPassword = await queryOne<any>('SELECT password_hash FROM users WHERE id = ?', [user.id]);
   const isValidPassword = await bcrypt.compare(data.password, userWithPassword.password_hash);
 
@@ -295,10 +286,8 @@ export const loginUser = async (
     throw new AppError('Credenciales inválidas', 401, ERROR_CODES.INVALID_CREDENTIALS);
   }
 
-  // Resetear intentos de login y actualizar último login
   await resetLoginAttempts(user.id);
 
-  // Crear sesión
   const session = await createUserSession(
     user.id,
     data.device_info,
@@ -306,7 +295,6 @@ export const loginUser = async (
     userAgent
   );
 
-  // Generar tokens JWT
   const jwtPayload: JWTPayload = {
     user_id: user.id,
     email: user.email,
@@ -331,9 +319,7 @@ export const loginUser = async (
   };
 };
 
-// Renovar token
 export const refreshAccessToken = async (refreshToken: string): Promise<Omit<LoginResponse, 'user'>> => {
-  // Buscar sesión por refresh token
   const session = await queryOne<UserSession>(
     'SELECT * FROM user_sessions WHERE refresh_token = ? AND is_active = 1 AND expires_at > NOW()',
     [refreshToken]
@@ -343,13 +329,11 @@ export const refreshAccessToken = async (refreshToken: string): Promise<Omit<Log
     throw new AppError('Refresh token inválido', 401, ERROR_CODES.REFRESH_TOKEN_INVALID);
   }
 
-  // Obtener usuario
   const user = await getUserById(session.user_id);
   if (!user || !user.is_active) {
     throw new AppError('Usuario no válido', 401, ERROR_CODES.TOKEN_INVALID);
   }
 
-  // Generar nuevo access token
   const jwtPayload: JWTPayload = {
     user_id: user.id,
     email: user.email,
@@ -367,13 +351,11 @@ export const refreshAccessToken = async (refreshToken: string): Promise<Omit<Log
   };
 };
 
-// Cerrar sesión
 export const logoutUser = async (sessionId: number): Promise<void> => {
   const sql = 'UPDATE user_sessions SET is_active = 0 WHERE id = ?';
   await query(sql, [sessionId]);
 };
 
-// Cerrar todas las sesiones de un usuario
 export const logoutAllSessions = async (userId: number): Promise<void> => {
   const sql = 'UPDATE user_sessions SET is_active = 0 WHERE user_id = ?';
   await query(sql, [userId]);

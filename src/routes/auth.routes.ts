@@ -1,4 +1,3 @@
-// src/routes/auth.routes.ts
 import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
@@ -11,7 +10,6 @@ import { ERROR_CODES } from '../types/constants/errors.js';
 
 const router = Router();
 
-// Validaciones
 const registerValidation = {
   email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
   password: { required: true, minLength: 8 },
@@ -30,7 +28,6 @@ const refreshValidation = {
   refresh_token: { required: true }
 };
 
-// POST /auth/register - Registrar usuario
 router.post('/register', validateRequest(registerValidation), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const registerData: RegisterRequest = req.body;
@@ -49,7 +46,6 @@ router.post('/register', validateRequest(registerValidation), async (req: Reques
   }
 });
 
-// POST /auth/login - Iniciar sesión
 router.post('/login', validateRequest(loginValidation), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const loginData: LoginRequest = req.body;
@@ -70,7 +66,6 @@ router.post('/login', validateRequest(loginValidation), async (req: Request, res
   }
 });
 
-// POST /auth/refresh - Renovar token
 router.post('/refresh', validateRequest(refreshValidation), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refresh_token }: RefreshTokenRequest = req.body;
@@ -89,7 +84,6 @@ router.post('/refresh', validateRequest(refreshValidation), async (req: Request,
   }
 });
 
-// POST /auth/logout - Cerrar sesión
 router.post('/logout', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.session) {
@@ -109,7 +103,6 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response, nex
   }
 });
 
-// GET /auth/me - Obtener información del usuario autenticado
 router.get('/me', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const response: ApiResponse = {
@@ -124,7 +117,6 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response, next: Ne
   }
 });
 
-// POST /auth/verify-token - Verificar si el token es válido
 router.post('/verify-token', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const response: ApiResponse = {

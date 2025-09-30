@@ -21,15 +21,12 @@ const SALT_ROUNDS = 12;
 const CODE_EXPIRATION_MINUTES = 10;
 
 
-// Solicitar código de verificación para cambio de contraseña
 export const requestPasswordChangeCode = async (userId: number): Promise<void> => {
   const user = await getUserByIdService(userId);
 
-  // Generar código de verificación
   const code = generateVerificationCode();
   const expiresAt = new Date(Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000);
 
-  // Guardar código en la base de datos
   const sql = `
     UPDATE users 
     SET password_change_code = ?, 
@@ -38,18 +35,15 @@ export const requestPasswordChangeCode = async (userId: number): Promise<void> =
   `;
   await query(sql, [code, expiresAt, userId]);
 
-  // Enviar código por email
   const userName = `${user.first_name} ${user.last_name}`;
   await sendPasswordChangeCode(user.email, userName, code);
 };
 
-// Verificar código y cambiar contraseña
 export const changeUserPasswordWithCode = async (
   userId: number,
   code: string,
   newPassword: string
 ): Promise<void> => {
-  // Obtener usuario con código
   const sql = `
     SELECT id, email, first_name, last_name, 
            password_change_code, password_change_code_expires 
@@ -62,7 +56,6 @@ export const changeUserPasswordWithCode = async (
     throw new AppError('Usuario no encontrado', 404, ERROR_CODES.RESOURCE_NOT_FOUND);
   }
 
-  // Verificar que existe un código
   if (!user.password_change_code || !user.password_change_code_expires) {
     throw new AppError(
       'No hay solicitud de cambio de contraseña pendiente',
@@ -71,9 +64,7 @@ export const changeUserPasswordWithCode = async (
     );
   }
 
-  // Verificar que el código no ha expirado
   if (new Date() > new Date(user.password_change_code_expires)) {
-    // Limpiar código expirado
     await query('UPDATE users SET password_change_code = NULL, password_change_code_expires = NULL WHERE id = ?', [userId]);
     throw new AppError(
       'El código de verificación ha expirado',
@@ -82,7 +73,6 @@ export const changeUserPasswordWithCode = async (
     );
   }
 
-  // Verificar que el código coincide
   if (user.password_change_code !== code) {
     throw new AppError(
       'Código de verificación inválido',
@@ -91,10 +81,8 @@ export const changeUserPasswordWithCode = async (
     );
   }
 
-  // Hash de la nueva contraseña
   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-  // Actualizar contraseña y limpiar código
   const updateSql = `
     UPDATE users 
     SET password_hash = ?,
@@ -104,19 +92,16 @@ export const changeUserPasswordWithCode = async (
   `;
   await query(updateSql, [hashedPassword, userId]);
 
-  // Enviar email de confirmación
   const userName = `${user.first_name} ${user.last_name}`;
   await sendPasswordChangedConfirmation(user.email, userName);
 };
 
-// Función existente actualizada (mantener como respaldo)
 export const changeUserPassword = async (id: number, newPassword: string): Promise<void> => {
   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
   const sql = 'UPDATE users SET password_hash = ? WHERE id = ?';
   await query(sql, [hashedPassword, id]);
 };
 
-// Obtener todos los usuarios con paginación y filtros
 
 export const getAllUsers = async (
   filters: PaginationQuery & {
@@ -139,7 +124,7 @@ export const getAllUsers = async (
 
   if (filters.is_active !== undefined) {
     whereClauses.push('u.is_active = ?');
-    params.push(filters.is_active ? 1 : 0); // Convertir boolean a número
+    params.push(filters.is_active ? 1 : 0);
   }
 
   if (filters.search) {
@@ -152,7 +137,6 @@ export const getAllUsers = async (
 
   const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-  // Contar total
   const countSql = `
     SELECT COUNT(*) as total
     FROM users u
@@ -162,11 +146,9 @@ export const getAllUsers = async (
   const countResult = await query<{ total: number }>(countSql, params);
   const total = countResult[0]?.total ?? 0;
 
-  // Obtener usuarios
   const sortBy = filters.sort_by || 'created_at';
   const sortOrder = filters.sort_order || 'DESC';
 
-  // Validar sortBy para prevenir SQL injection
   const allowedSortFields = ['id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at', 'last_login'];
   const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
   const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
@@ -189,7 +171,6 @@ export const getAllUsers = async (
     LIMIT ? OFFSET ?
   `;
 
-  // IMPORTANTE: Asegurarse de que limit y offset sean números enteros
   const usersParams = [...params, parseInt(String(limit)), parseInt(String(offset))];
 
   console.log('SQL:', usersSql);
@@ -245,7 +226,6 @@ export const getAllUsers = async (
   };
 };
 
-// Obtener usuario por ID
 export const getUserByIdService = async (id: number): Promise<UserWithRole> => {
   const sql = `
     SELECT 
@@ -306,15 +286,12 @@ export const getUserByIdService = async (id: number): Promise<UserWithRole> => {
   };
 };
 
-// Crear usuario
 export const createUser = async (data: CreateUserRequest): Promise<UserWithRole> => {
-  // Verificar que el email no exista
   const existingUser = await queryOne('SELECT id FROM users WHERE email = ?', [data.email]);
   if (existingUser) {
     throw new AppError('El email ya está registrado', 409, ERROR_CODES.DUPLICATE_ENTRY);
   }
 
-  // Verificar que el rol existe y está activo
   const role = await queryOne<Role>('SELECT * FROM roles WHERE id = ? AND is_active = 1', [
     data.role_id
   ]);
@@ -322,10 +299,8 @@ export const createUser = async (data: CreateUserRequest): Promise<UserWithRole>
     throw new AppError('Rol no válido o inactivo', 400, ERROR_CODES.VALIDATION_ERROR);
   }
 
-  // Hash de contraseña
   const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  // Insertar usuario
   const sql = `
     INSERT INTO users (email, password_hash, first_name, last_name, profile_picture, role_id, is_active)
     VALUES (?, ?, ?, ?, ?, ?, 1)
@@ -340,7 +315,6 @@ export const createUser = async (data: CreateUserRequest): Promise<UserWithRole>
     data.role_id
   ]);
 
-  // Crear configuraciones por defecto
   const settingsSql = `
     INSERT INTO user_settings (user_id, notifications, dashboard_layout)
     VALUES (?, '{}', '{}')
@@ -350,15 +324,12 @@ export const createUser = async (data: CreateUserRequest): Promise<UserWithRole>
   return await getUserByIdService(userId);
 };
 
-// Actualizar usuario
 export const updateUser = async (
   id: number,
   data: UpdateUserRequest
 ): Promise<UserWithRole> => {
-  // Verificar que el usuario existe
   const existingUser = await getUserByIdService(id);
 
-  // Si se está cambiando el rol, verificar que existe y está activo
   if (data.role_id && data.role_id !== existingUser.role_id) {
     const role = await queryOne<Role>('SELECT * FROM roles WHERE id = ? AND is_active = 1', [
       data.role_id
@@ -368,7 +339,6 @@ export const updateUser = async (
     }
   }
 
-  // Construir query de actualización
   const updates: string[] = [];
   const params: any[] = [];
 
@@ -405,11 +375,9 @@ export const updateUser = async (
   return await getUserByIdService(id);
 };
 
-// Eliminar usuario (soft delete)
 export const deleteUser = async (id: number): Promise<void> => {
   const user = await getUserByIdService(id);
 
-  // No permitir eliminar super_admin
   if (user.role.name === 'super_admin') {
     throw new AppError(
       'No se puede eliminar un super administrador',
@@ -422,11 +390,9 @@ export const deleteUser = async (id: number): Promise<void> => {
   await query(sql, [id]);
 };
 
-// Eliminar usuario permanentemente
 export const deleteUserPermanently = async (id: number): Promise<void> => {
   const user = await getUserByIdService(id);
 
-  // No permitir eliminar super_admin
   if (user.role.name === 'super_admin') {
     throw new AppError(
       'No se puede eliminar un super administrador',
@@ -439,14 +405,7 @@ export const deleteUserPermanently = async (id: number): Promise<void> => {
   await query(sql, [id]);
 };
 
-// // Cambiar contraseña de usuario
-// export const changeUserPassword = async (id: number, newPassword: string): Promise<void> => {
-//   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-//   const sql = 'UPDATE users SET password_hash = ? WHERE id = ?';
-//   await query(sql, [hashedPassword, id]);
-// };
 
-// Obtener configuraciones de usuario
 export const getUserSettings = async (userId: number): Promise<UserSettings> => {
   const sql = 'SELECT * FROM user_settings WHERE user_id = ?';
   const settings = await queryOne<any>(sql, [userId]);
@@ -474,12 +433,10 @@ export const getUserSettings = async (userId: number): Promise<UserSettings> => 
   };
 };
 
-// Actualizar configuraciones de usuario
 export const updateUserSettings = async (
   userId: number,
   data: UpdateUserSettingsRequest
 ): Promise<UserSettings> => {
-  // Verificar que existen las configuraciones
   await getUserSettings(userId);
 
   const updates: string[] = [];
@@ -523,11 +480,9 @@ export const updateUserSettings = async (
   return await getUserSettings(userId);
 };
 
-// Activar/Desactivar usuario
 export const toggleUserStatus = async (id: number): Promise<UserWithRole> => {
   const user = await getUserByIdService(id);
 
-  // No permitir desactivar super_admin
   if (user.role.name === 'super_admin') {
     throw new AppError(
       'No se puede desactivar un super administrador',

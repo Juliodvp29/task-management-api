@@ -8,7 +8,7 @@ export const PASSWORD_REQUIREMENTS = {
 } as const;
 
 export const FILE_LIMITS = {
-  MAX_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_SIZE: 10 * 1024 * 1024,
   ALLOWED_TYPES: [
     'image/jpeg',
     'image/png',

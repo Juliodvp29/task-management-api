@@ -1,25 +1,26 @@
-// src/config/email.ts
 import type { Transporter } from 'nodemailer';
 import nodemailer from 'nodemailer';
 
+// Email configuration interface
 export interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
+  host: string;       // SMTP server host (e.g., smtp.gmail.com)
+  port: number;       // SMTP server port (e.g., 587 for TLS)
+  secure: boolean;    // Whether to use SSL (true for port 465, false for others)
   auth: {
-    user: string;
-    pass: string;
+    user: string;     // SMTP username (usually the email address)
+    pass: string;     // SMTP password or app-specific password
   };
   from: {
-    name: string;
-    email: string;
+    name: string;     // Default "From" display name
+    email: string;    // Default "From" email address
   };
 }
 
+// Load email configuration from environment variables or fallback defaults
 const emailConfig: EmailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros puertos
+  secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASSWORD || ''
@@ -30,9 +31,10 @@ const emailConfig: EmailConfig = {
   }
 };
 
-// Crear transporter
+// Singleton transporter instance (created only once)
 let transporter: Transporter | null = null;
 
+// Lazily initialize and return a Nodemailer transporter
 export const getEmailTransporter = (): Transporter => {
   if (!transporter) {
     transporter = nodemailer.createTransport({
@@ -48,43 +50,40 @@ export const getEmailTransporter = (): Transporter => {
   return transporter;
 };
 
-// Verificar configuración de email
+// Verify SMTP configuration (check if the transporter can connect)
 export const verifyEmailConfig = async (): Promise<boolean> => {
   try {
     const transporter = getEmailTransporter();
-    await transporter.verify();
-    console.log('✅ Configuración de email verificada correctamente');
+    await transporter.verify(); // Attempts connection with SMTP server
     return true;
   } catch (error) {
-    console.error('❌ Error verificando configuración de email:', error);
     return false;
   }
 };
 
-// Función para enviar email genérico
+// Send an email with both HTML and plain-text fallback
 export const sendEmail = async (
-  to: string,
-  subject: string,
-  html: string,
-  text?: string
+  to: string,          // Recipient email
+  subject: string,     // Email subject
+  html: string,        // Email body in HTML format
+  text?: string        // Optional plain-text body
 ): Promise<void> => {
   try {
     const transporter = getEmailTransporter();
 
     await transporter.sendMail({
-      from: `"${emailConfig.from.name}" <${emailConfig.from.email}>`,
+      from: `"${emailConfig.from.name}" <${emailConfig.from.email}>`, // Custom sender
       to,
       subject,
       html,
-      text: text || html.replace(/<[^>]*>/g, '') // Fallback a texto plano
+      text: text || html.replace(/<[^>]*>/g, '') // Fallback: strip HTML tags if plain text not provided
     });
 
-    console.log(`✅ Email enviado exitosamente a ${to}`);
   } catch (error) {
-    console.error('❌ Error enviando email:', error);
     throw error;
   }
 };
 
+// Export configuration for external use
 export { emailConfig };
 

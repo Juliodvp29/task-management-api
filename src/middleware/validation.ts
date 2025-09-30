@@ -1,23 +1,34 @@
-// src/middleware/validation.ts
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
 import type { FieldValidation, ValidatorConstraints } from '../types/utils/validation.js';
 
+/**
+ * Middleware to validate request body against given field constraints.
+ * Throws an AppError if validation fails.
+ */
 export const validateRequest = (validation: FieldValidation) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const errors: string[] = [];
       const data = req.body;
 
+      // Iterate through validation rules and check each field
       for (const [fieldName, constraints] of Object.entries(validation)) {
         const value = data[fieldName];
         const fieldErrors = validateField(fieldName, value, constraints);
         errors.push(...fieldErrors);
       }
 
+      // If there are validation errors, throw an AppError
       if (errors.length > 0) {
-        throw new AppError('Errores de validación', 400, ERROR_CODES.VALIDATION_ERROR, true, errors);
+        throw new AppError(
+          'Validation errors',
+          400,
+          ERROR_CODES.VALIDATION_ERROR,
+          true,
+          errors
+        );
       }
 
       next();
@@ -27,94 +38,109 @@ export const validateRequest = (validation: FieldValidation) => {
   };
 };
 
+/**
+ * Validates a single field against its constraints.
+ * Returns an array of error messages if validation fails.
+ */
 const validateField = (fieldName: string, value: any, constraints: ValidatorConstraints): string[] => {
   const errors: string[] = [];
 
-  // Required validation
+  // Required field validation
   if (constraints.required && (value === undefined || value === null || value === '')) {
-    errors.push(`El campo '${fieldName}' es requerido`);
-    return errors; // Si es requerido y está vacío, no validamos más
+    errors.push(`The field '${fieldName}' is required`);
+    return errors;
   }
 
-  // Si no es requerido y está vacío, no validamos más
+  // Skip validation if value is empty and not required
   if (!constraints.required && (value === undefined || value === null || value === '')) {
     return errors;
   }
 
-  // String validations
+  // String constraints
   if (typeof value === 'string') {
     if (constraints.minLength && value.length < constraints.minLength) {
-      errors.push(`El campo '${fieldName}' debe tener al menos ${constraints.minLength} caracteres`);
+      errors.push(`The field '${fieldName}' must have at least ${constraints.minLength} characters`);
     }
 
     if (constraints.maxLength && value.length > constraints.maxLength) {
-      errors.push(`El campo '${fieldName}' no puede tener más de ${constraints.maxLength} caracteres`);
+      errors.push(`The field '${fieldName}' cannot exceed ${constraints.maxLength} characters`);
     }
 
     if (constraints.pattern && !constraints.pattern.test(value)) {
-      errors.push(`El campo '${fieldName}' no tiene un formato válido`);
+      errors.push(`The field '${fieldName}' has an invalid format`);
     }
   }
 
-  // Number validations
+  // Numeric constraints
   if (typeof value === 'number') {
     if (constraints.min !== undefined && value < constraints.min) {
-      errors.push(`El campo '${fieldName}' debe ser mayor o igual a ${constraints.min}`);
+      errors.push(`The field '${fieldName}' must be greater than or equal to ${constraints.min}`);
     }
 
     if (constraints.max !== undefined && value > constraints.max) {
-      errors.push(`El campo '${fieldName}' debe ser menor o igual a ${constraints.max}`);
+      errors.push(`The field '${fieldName}' must be less than or equal to ${constraints.max}`);
     }
   }
 
   // Enum validation
   if (constraints.enum && !constraints.enum.includes(value)) {
-    errors.push(`El campo '${fieldName}' debe ser uno de: ${constraints.enum.join(', ')}`);
+    errors.push(`The field '${fieldName}' must be one of: ${constraints.enum.join(', ')}`);
   }
 
-  // Custom validation
+  // Custom validator
   if (constraints.custom) {
     const customResult = constraints.custom(value);
     if (customResult !== true) {
-      errors.push(typeof customResult === 'string' ? customResult : `El campo '${fieldName}' no es válido`);
+      errors.push(
+        typeof customResult === 'string'
+          ? customResult
+          : `The field '${fieldName}' is invalid`
+      );
     }
   }
 
   return errors;
 };
 
-// Validador específico para emails
+/**
+ * Validates if a given string is a properly formatted email.
+ */
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Validador específico para contraseñas
+/**
+ * Validates password strength based on multiple rules:
+ * - Minimum 8 characters
+ * - Maximum 128 characters
+ * - At least one uppercase, one lowercase, one number, one special character
+ */
 export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (password.length < 8) {
-    errors.push('La contraseña debe tener al menos 8 caracteres');
+    errors.push('Password must be at least 8 characters long');
   }
 
   if (password.length > 128) {
-    errors.push('La contraseña no puede tener más de 128 caracteres');
+    errors.push('Password cannot exceed 128 characters');
   }
 
   if (!/[A-Z]/.test(password)) {
-    errors.push('La contraseña debe contener al menos una letra mayúscula');
+    errors.push('Password must contain at least one uppercase letter');
   }
 
   if (!/[a-z]/.test(password)) {
-    errors.push('La contraseña debe contener al menos una letra minúscula');
+    errors.push('Password must contain at least one lowercase letter');
   }
 
   if (!/\d/.test(password)) {
-    errors.push('La contraseña debe contener al menos un número');
+    errors.push('Password must contain at least one number');
   }
 
   if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]/.test(password)) {
-    errors.push('La contraseña debe contener al menos un carácter especial');
+    errors.push('Password must contain at least one special character');
   }
 
   return {
@@ -123,7 +149,9 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
   };
 };
 
-// Middleware para validar parámetros de URL
+/**
+ * Middleware to validate request parameters against given field constraints.
+ */
 export const validateParams = (validation: FieldValidation) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -137,7 +165,13 @@ export const validateParams = (validation: FieldValidation) => {
       }
 
       if (errors.length > 0) {
-        throw new AppError('Parámetros inválidos', 400, ERROR_CODES.VALIDATION_ERROR, true, errors);
+        throw new AppError(
+          'Invalid parameters',
+          400,
+          ERROR_CODES.VALIDATION_ERROR,
+          true,
+          errors
+        );
       }
 
       next();
@@ -147,7 +181,10 @@ export const validateParams = (validation: FieldValidation) => {
   };
 };
 
-// Middleware para validar query parameters
+/**
+ * Middleware to validate query parameters against given field constraints.
+ * Also converts numeric query values to numbers when applicable.
+ */
 export const validateQuery = (validation: FieldValidation) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -157,7 +194,7 @@ export const validateQuery = (validation: FieldValidation) => {
       for (const [fieldName, constraints] of Object.entries(validation)) {
         let value: any = data[fieldName];
 
-        // Convertir string a número si es necesario
+        // Convert query string values to numbers if min/max constraints exist
         if (value && typeof value === 'string' && (constraints.min !== undefined || constraints.max !== undefined)) {
           const numValue = Number(value);
           if (!isNaN(numValue)) {
@@ -170,7 +207,13 @@ export const validateQuery = (validation: FieldValidation) => {
       }
 
       if (errors.length > 0) {
-        throw new AppError('Parámetros de consulta inválidos', 400, ERROR_CODES.VALIDATION_ERROR, true, errors);
+        throw new AppError(
+          'Invalid query parameters',
+          400,
+          ERROR_CODES.VALIDATION_ERROR,
+          true,
+          errors
+        );
       }
 
       next();

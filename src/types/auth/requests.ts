@@ -1,4 +1,3 @@
-// src/types/auth/requests.ts (FIXED VERSION)
 import type { Request } from 'express';
 import type { DashboardLayout, NotificationSettings } from '../system/notification.js';
 import type { UserSession } from './session.js';

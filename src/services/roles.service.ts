@@ -4,7 +4,6 @@ import type { Role } from '../types/auth/user.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
 
-// Obtener todos los roles
 export const getAllRoles = async (includeInactive: boolean = false): Promise<Role[]> => {
   let sql = 'SELECT * FROM roles';
 
@@ -28,7 +27,6 @@ export const getAllRoles = async (includeInactive: boolean = false): Promise<Rol
   }));
 };
 
-// Obtener rol por ID
 export const getRoleById = async (id: number): Promise<Role> => {
   const sql = 'SELECT * FROM roles WHERE id = ?';
   const role = await queryOne<any>(sql, [id]);
@@ -49,7 +47,6 @@ export const getRoleById = async (id: number): Promise<Role> => {
   };
 };
 
-// Obtener rol por nombre
 export const getRoleByName = async (name: string): Promise<Role | null> => {
   const sql = 'SELECT * FROM roles WHERE name = ?';
   const role = await queryOne<any>(sql, [name]);
@@ -68,15 +65,12 @@ export const getRoleByName = async (name: string): Promise<Role | null> => {
   };
 };
 
-// Crear rol
 export const createRole = async (data: CreateRoleRequest): Promise<Role> => {
-  // Verificar que el nombre no exista
   const existingRole = await getRoleByName(data.name);
   if (existingRole) {
     throw new AppError('Ya existe un rol con ese nombre', 409, ERROR_CODES.DUPLICATE_ENTRY);
   }
 
-  // Validar que el nombre sea alfanumérico con guiones bajos
   if (!/^[a-z_]+$/.test(data.name)) {
     throw new AppError(
       'El nombre del rol solo puede contener letras minúsculas y guiones bajos',
@@ -85,7 +79,6 @@ export const createRole = async (data: CreateRoleRequest): Promise<Role> => {
     );
   }
 
-  // Insertar rol
   const sql = `
     INSERT INTO roles (name, display_name, description, permissions, is_active)
     VALUES (?, ?, ?, ?, 1)
@@ -101,12 +94,9 @@ export const createRole = async (data: CreateRoleRequest): Promise<Role> => {
   return await getRoleById(roleId);
 };
 
-// Actualizar rol
 export const updateRole = async (id: number, data: UpdateRoleRequest): Promise<Role> => {
-  // Verificar que el rol existe
   const existingRole = await getRoleById(id);
 
-  // No permitir modificar roles de sistema
   if (['super_admin', 'admin', 'manager', 'user'].includes(existingRole.name)) {
     throw new AppError(
       'No se pueden modificar los roles del sistema',
@@ -115,7 +105,6 @@ export const updateRole = async (id: number, data: UpdateRoleRequest): Promise<R
     );
   }
 
-  // Construir query de actualización
   const updates: string[] = [];
   const params: any[] = [];
 
@@ -148,11 +137,9 @@ export const updateRole = async (id: number, data: UpdateRoleRequest): Promise<R
   return await getRoleById(id);
 };
 
-// Eliminar rol
 export const deleteRole = async (id: number): Promise<void> => {
   const role = await getRoleById(id);
 
-  // No permitir eliminar roles de sistema
   if (['super_admin', 'admin', 'manager', 'user'].includes(role.name)) {
     throw new AppError(
       'No se pueden eliminar los roles del sistema',
@@ -161,7 +148,6 @@ export const deleteRole = async (id: number): Promise<void> => {
     );
   }
 
-  // Verificar que no haya usuarios con este rol
   const usersWithRole = await query('SELECT COUNT(*) as count FROM users WHERE role_id = ?', [
     id
   ]);
@@ -177,11 +163,9 @@ export const deleteRole = async (id: number): Promise<void> => {
   await query(sql, [id]);
 };
 
-// Activar/Desactivar rol
 export const toggleRoleStatus = async (id: number): Promise<Role> => {
   const role = await getRoleById(id);
 
-  // No permitir desactivar roles de sistema
   if (['super_admin', 'admin', 'manager', 'user'].includes(role.name)) {
     throw new AppError(
       'No se pueden desactivar los roles del sistema',
@@ -197,7 +181,6 @@ export const toggleRoleStatus = async (id: number): Promise<Role> => {
   return await getRoleById(id);
 };
 
-// Obtener usuarios por rol
 export const getUsersByRole = async (roleId: number): Promise<any[]> => {
   const sql = `
     SELECT id, email, first_name, last_name, is_active, created_at
@@ -209,7 +192,6 @@ export const getUsersByRole = async (roleId: number): Promise<any[]> => {
   return await query(sql, [roleId]);
 };
 
-// Helper para parsear permisos
 const parsePermissions = (permissions: any): string[] => {
   try {
     if (Array.isArray(permissions)) {

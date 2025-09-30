@@ -1,4 +1,3 @@
-// src/routes/roles.routes.ts
 import type { NextFunction, Response } from 'express';
 import { Router } from 'express';
 import { authenticate, requirePermission } from '../middleware/auth.js';
@@ -20,7 +19,6 @@ import { PERMISSIONS } from '../types/constants/permissions.js';
 
 const router = Router();
 
-// Validaciones
 const createRoleValidation = {
   name: {
     required: true,
@@ -36,7 +34,6 @@ const updateRoleValidation = {
   display_name: { minLength: 2, maxLength: 100 }
 };
 
-// GET /roles - Obtener todos los roles
 router.get(
   '/',
   authenticate,
@@ -59,7 +56,6 @@ router.get(
   }
 );
 
-// GET /roles/permissions - Obtener lista de todos los permisos disponibles
 router.get(
   '/permissions',
   authenticate,
@@ -84,7 +80,6 @@ router.get(
   }
 );
 
-// GET /roles/:id - Obtener rol por ID
 router.get(
   '/:id',
   authenticate,
@@ -115,7 +110,6 @@ router.get(
   }
 );
 
-// GET /roles/:id/users - Obtener usuarios de un rol
 router.get(
   '/:id/users',
   authenticate,
@@ -131,7 +125,6 @@ router.get(
         throw new AppError('ID de rol inválido', 400, ERROR_CODES.VALIDATION_ERROR);
       }
 
-      // Verificar que el rol existe
       await getRoleById(roleId);
 
       const users = await getUsersByRole(roleId);
@@ -149,7 +142,6 @@ router.get(
   }
 );
 
-// POST /roles - Crear rol
 router.post(
   '/',
   authenticate,
@@ -159,7 +151,6 @@ router.post(
     try {
       const roleData: CreateRoleRequest = req.body;
 
-      // Validar que los permisos sean válidos
       const validPermissions = Object.keys(PERMISSIONS);
       const invalidPermissions = roleData.permissions.filter(
         (p) => !validPermissions.includes(p)
@@ -190,7 +181,6 @@ router.post(
   }
 );
 
-// PUT /roles/:id - Actualizar rol
 router.put(
   '/:id',
   authenticate,
@@ -209,7 +199,6 @@ router.put(
 
       const updateData: UpdateRoleRequest = req.body;
 
-      // Validar permisos si se están actualizando
       if (updateData.permissions) {
         const validPermissions = Object.keys(PERMISSIONS);
         const invalidPermissions = updateData.permissions.filter(
@@ -242,7 +231,6 @@ router.put(
   }
 );
 
-// PATCH /roles/:id/status - Activar/Desactivar rol
 router.patch(
   '/:id/status',
   authenticate,
@@ -273,7 +261,6 @@ router.patch(
   }
 );
 
-// DELETE /roles/:id - Eliminar rol
 router.delete(
   '/:id',
   authenticate,

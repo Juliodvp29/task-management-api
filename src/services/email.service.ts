@@ -1,11 +1,9 @@
 import { sendEmail } from '../config/email.js';
 
-// Generar código de verificación de 6 dígitos
 export const generateVerificationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Template para código de verificación de cambio de contraseña
 const getPasswordChangeTemplate = (userName: string, code: string): string => {
   return `
     <!DOCTYPE html>
@@ -90,7 +88,6 @@ const getPasswordChangeTemplate = (userName: string, code: string): string => {
   `;
 };
 
-// Enviar código de verificación para cambio de contraseña
 export const sendPasswordChangeCode = async (
   email: string,
   userName: string,
@@ -102,7 +99,6 @@ export const sendPasswordChangeCode = async (
   await sendEmail(email, subject, html);
 };
 
-// Template para confirmación de cambio de contraseña exitoso
 const getPasswordChangedTemplate = (userName: string): string => {
   return `
     <!DOCTYPE html>
@@ -174,7 +170,6 @@ const getPasswordChangedTemplate = (userName: string): string => {
   `;
 };
 
-// Enviar confirmación de cambio de contraseña
 export const sendPasswordChangedConfirmation = async (
   email: string,
   userName: string
