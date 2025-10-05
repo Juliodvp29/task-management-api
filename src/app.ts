@@ -50,10 +50,9 @@ app.get('/api', (req, res) => {
       endpoints: {
         auth: '/api/auth',
         users: '/api/users',
-        roles: '/api/roles'
-        // tasks: '/api/tasks',
-        // lists: '/api/lists',
-        // calendar: '/api/calendar'
+        roles: '/api/roles',
+        tasks: '/api/tasks',
+        lists: '/api/lists'
       }
     }
   };
