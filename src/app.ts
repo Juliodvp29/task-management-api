@@ -52,7 +52,8 @@ app.get('/api', (req, res) => {
         users: '/api/users',
         roles: '/api/roles',
         tasks: '/api/tasks',
-        lists: '/api/lists'
+        lists: '/api/lists',
+        calendar: '/api/calendar'
       }
     }
   };

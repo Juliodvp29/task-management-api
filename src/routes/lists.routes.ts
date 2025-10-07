@@ -1,5 +1,3 @@
-import { AuthRequest } from '@/types/auth/requests.js';
-import { CreateTaskListRequest, UpdateTaskListRequest } from '@/types/task/requests.js';
 import type { NextFunction, Response } from 'express';
 import { Router } from 'express';
 import { authenticate, requirePermission } from '../middleware/auth.js';
@@ -14,9 +12,11 @@ import {
   toggleTaskListStatus,
   updateTaskList
 } from '../services/lists.service.js';
+import { AuthRequest } from '../types/auth/requests.js';
 import type { ApiResponse } from '../types/base/api.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
+import { CreateTaskListRequest, UpdateTaskListRequest } from '../types/task/requests.js';
 
 const router = Router();
 

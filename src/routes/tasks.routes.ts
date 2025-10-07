@@ -1,14 +1,14 @@
-import { addTaskComment, assignTask, completeTask, createTask, deleteTask, deleteTaskComment, getAllTasks, getTaskById, getTaskComments, moveTask, toggleTaskStatus, updateTask, updateTaskComment } from '@/services/tasks.service.js';
-import { AuthRequest } from '@/types/auth/requests.js';
-import { CreateTaskRequest, MoveTaskRequest, UpdateTaskRequest } from '@/types/task/requests.js';
 import type { NextFunction, Response } from 'express';
 import { Router } from 'express';
 import { authenticate, requirePermission } from '../middleware/auth.js';
 import { validateQuery, validateRequest } from '../middleware/validation.js';
+import { addTaskComment, assignTask, completeTask, createTask, deleteTask, deleteTaskComment, getAllTasks, getTaskById, getTaskComments, moveTask, toggleTaskStatus, updateTask, updateTaskComment } from '../services/tasks.service.js';
+import { AuthRequest } from '../types/auth/requests.js';
 import type { ApiResponse } from '../types/base/api.js';
 import { AppError } from '../types/base/error.js';
 import { ERROR_CODES } from '../types/constants/errors.js';
 import { TaskPriority, TaskStatus } from '../types/enums/task.js';
+import { CreateTaskRequest, MoveTaskRequest, UpdateTaskRequest } from '../types/task/requests.js';
 
 const router = Router();
 
