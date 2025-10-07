@@ -17,7 +17,7 @@ API RESTful para gestión de tareas construida con Node.js, TypeScript y MySQL. 
 
 ```bash
 # Clonar repositorio
-git clone <https://github.com/Juliodvp29/task-management-api.git>
+git clone https://github.com/Juliodvp29/task-management-api.git
 cd task-management-api
 
 # Instalar dependencias
@@ -784,7 +784,7 @@ Este proyecto está bajo la Licencia MIT.
 
 ## 👨‍💻 Autor
 
-Desarrollado por [Julio Otero]
+Desarrollado por Julio Otero
 
 ## 🤝 Contribuciones
 
